@@ -23,6 +23,7 @@ use serde::{Deserialize, Serialize};
 use serde_json;
 use std::{self, fmt};
 use tokio;
+use tower_http::BodyOrIoError;
 
 use crate::common::Headers;
 
@@ -170,4 +171,13 @@ pub enum Error {
     ///panic if it receives malformed headers or the like.
     #[error("Error converting headers: {}", _0)]
     HeaderConvertError(#[from] std::num::ParseIntError),
+}
+
+impl Error {
+    pub(crate) fn from_decompression_error(e: BodyOrIoError<hyper::Error>) -> Self {
+        match e {
+            BodyOrIoError::Body(e) => e.into(),
+            BodyOrIoError::Io(e) => e.into(),
+        }
+    }
 }
